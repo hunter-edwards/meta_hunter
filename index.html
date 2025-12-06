@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta Hunter - Code Cracking Roguelite</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-overlay">
+            <!-- Mastermind UI -->
+            <div id="mastermind-ui" class="puzzle-ui">
+                <div class="puzzle-header">
+                    <h1>MASTERMIND</h1>
+                    <div class="puzzle-stats">
+                        <div class="stat">
+                            <span class="label">Timer:</span>
+                            <span id="timer">60</span>s
+                        </div>
+                        <div class="stat">
+                            <span class="label">Attempts:</span>
+                            <span id="attempts-remaining">10</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="puzzle-content">
+                    <div id="guess-history" class="guess-history">
+                        <!-- Previous guesses will appear here -->
+                    </div>
+
+                    <div class="input-section">
+                        <input
+                            type="text"
+                            id="guess-input"
+                            placeholder="Enter 4-digit code (0-9)"
+                            maxlength="4"
+                            autocomplete="off"
+                        />
+                        <button id="submit-guess" class="btn-primary">SUBMIT GUESS</button>
+                    </div>
+
+                    <div id="game-message" class="message"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load modules -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
