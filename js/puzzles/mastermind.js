@@ -14,7 +14,7 @@ export class MastermindPuzzle {
         this.solution = this.generateCode();
         this.guesses = [];
         this.feedback = [];
-        this.timer = 60; // 60 seconds
+        this.timer = 90; // 90 seconds - more forgiving for testing
         this.startTime = Date.now();
         this.isComplete = false;
         this.isWon = false;

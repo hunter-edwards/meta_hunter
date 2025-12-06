@@ -85,13 +85,13 @@ class MetaHunterGame {
     /**
      * Start a new Mastermind puzzle
      */
-    startNewPuzzle(difficulty = 1) {
+    startNewPuzzle(difficulty = 0) {
         // Clear any existing timer
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
         }
 
-        // Create new puzzle
+        // Create new puzzle (difficulty 0 = 3 digits, easier!)
         this.puzzle = new MastermindPuzzle(difficulty);
 
         // Reset UI
