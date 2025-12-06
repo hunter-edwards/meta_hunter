@@ -54,14 +54,22 @@ class MetaHunterGame {
      * Set up event listeners for UI interactions
      */
     setupEventListeners() {
+        console.log('Setting up event listeners...');
+        console.log('Submit button:', this.ui.submitButton);
+        console.log('Input field:', this.ui.guessInput);
+
         // Submit guess on button click
-        this.ui.submitButton.addEventListener('click', () => {
+        this.ui.submitButton.addEventListener('click', (e) => {
+            console.log('Button clicked!');
+            e.preventDefault();
             this.handleGuessSubmit();
         });
 
         // Submit guess on Enter key
         this.ui.guessInput.addEventListener('keypress', (e) => {
+            console.log('Key pressed:', e.key);
             if (e.key === 'Enter') {
+                e.preventDefault();
                 this.handleGuessSubmit();
             }
         });
@@ -70,6 +78,8 @@ class MetaHunterGame {
         this.ui.guessInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
+
+        console.log('Event listeners set up successfully!');
     }
 
     /**
@@ -108,43 +118,51 @@ class MetaHunterGame {
      * Handle guess submission
      */
     handleGuessSubmit() {
-        const input = this.ui.guessInput.value.trim();
+        try {
+            console.log('Guess submitted!');
+            const input = this.ui.guessInput.value.trim();
+            console.log('Input:', input);
 
-        // Validate input length
-        if (input.length !== this.puzzle.codeLength) {
-            this.showMessage(
-                `Enter exactly ${this.puzzle.codeLength} digits`,
-                'error'
+            // Validate input length
+            if (input.length !== this.puzzle.codeLength) {
+                this.showMessage(
+                    `Enter exactly ${this.puzzle.codeLength} digits`,
+                    'error'
+                );
+                return;
+            }
+
+            // Make the guess
+            const result = this.puzzle.makeGuess(input);
+            console.log('Result:', result);
+
+            if (!result.success) {
+                this.showMessage(result.error, 'error');
+                return;
+            }
+
+            // Add guess to history
+            this.addGuessToHistory(
+                input,
+                result.feedback,
+                this.puzzle.guesses.length
             );
-            return;
-        }
 
-        // Make the guess
-        const result = this.puzzle.makeGuess(input);
+            // Clear input
+            this.ui.guessInput.value = '';
 
-        if (!result.success) {
-            this.showMessage(result.error, 'error');
-            return;
-        }
+            // Update UI
+            this.updateUI();
 
-        // Add guess to history
-        this.addGuessToHistory(
-            input,
-            result.feedback,
-            this.puzzle.guesses.length
-        );
-
-        // Clear input
-        this.ui.guessInput.value = '';
-
-        // Update UI
-        this.updateUI();
-
-        // Check if game is over
-        if (result.won) {
-            this.handleWin(result);
-        } else if (this.puzzle.isComplete) {
-            this.handleLoss(result);
+            // Check if game is over
+            if (result.won) {
+                this.handleWin(result);
+            } else if (this.puzzle.isComplete) {
+                this.handleLoss(result);
+            }
+        } catch (error) {
+            console.error('Error in handleGuessSubmit:', error);
+            this.showMessage('An error occurred: ' + error.message, 'error');
         }
     }
 
@@ -326,7 +344,40 @@ class MetaHunterGame {
     }
 }
 
+// Global error handler
+window.addEventListener('error', (e) => {
+    console.error('Global error:', e.error);
+    console.error('Message:', e.message);
+    console.error('Filename:', e.filename);
+    console.error('Line:', e.lineno);
+});
+
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.game = new MetaHunterGame();
+    console.log('DOM loaded, initializing game...');
+    try {
+        window.game = new MetaHunterGame();
+        console.log('Game initialized successfully!');
+    } catch (error) {
+        console.error('Failed to initialize game:', error);
+        document.body.innerHTML = `
+            <div style="color: #ff0080; padding: 20px; font-family: monospace;">
+                <h1>Error Loading Game</h1>
+                <p>Check the console for details.</p>
+                <pre>${error.message}\n${error.stack}</pre>
+            </div>
+        `;
+    }
 });
+
+// Also try to initialize if already loaded
+if (document.readyState === 'loading') {
+    console.log('Document is still loading...');
+} else {
+    console.log('Document already loaded, initializing immediately...');
+    try {
+        window.game = new MetaHunterGame();
+    } catch (error) {
+        console.error('Failed to initialize game:', error);
+    }
+}

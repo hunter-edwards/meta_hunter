@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta Hunter - Diagnostics</title>
+    <style>
+        body {
+            background: #0a0e0f;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+        }
+        .test {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #00ff41;
+            border-radius: 4px;
+        }
+        .pass { border-color: #00ff41; }
+        .fail { border-color: #ff0080; }
+        h1 { text-align: center; }
+        pre {
+            background: #1a1e1f;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        button {
+            background: #00ff41;
+            color: #0a0e0f;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #00cc33;
+        }
+        #console-output {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Meta Hunter - Diagnostic Tests</h1>
+
+    <div class="test" id="test-dom">
+        <h2>✓ Test 1: DOM Elements</h2>
+        <p>Checking if all required HTML elements exist...</p>
+        <div id="dom-results"></div>
+    </div>
+
+    <div class="test" id="test-modules">
+        <h2>Test 2: ES6 Module Loading</h2>
+        <p>Checking if modules can be loaded...</p>
+        <div id="module-results"></div>
+    </div>
+
+    <div class="test" id="test-game">
+        <h2>Test 3: Game Initialization</h2>
+        <p>Checking if the game can initialize...</p>
+        <button onclick="testGame()">Run Game Test</button>
+        <div id="game-results"></div>
+    </div>
+
+    <div class="test">
+        <h2>Console Output</h2>
+        <button onclick="clearConsole()">Clear Console</button>
+        <pre id="console-output"></pre>
+    </div>
+
+    <div class="test">
+        <h2>How to Fix Issues</h2>
+        <p><strong>If Test 2 fails:</strong> You need to run a web server!</p>
+        <pre>
+# Run one of these commands in the terminal:
+python3 -m http.server 8080
+# OR
+npx serve .
+# OR use VS Code Live Server extension
+
+# Then open: http://localhost:8080/test.html
+        </pre>
+    </div>
+
+    <script>
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('console-output');
+
+        function addToConsole(type, ...args) {
+            const msg = args.map(a =>
+                typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)
+            ).join(' ');
+            consoleOutput.textContent += `[${type}] ${msg}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        console.log = (...args) => {
+            originalLog(...args);
+            addToConsole('LOG', ...args);
+        };
+
+        console.error = (...args) => {
+            originalError(...args);
+            addToConsole('ERROR', ...args);
+        };
+
+        function clearConsole() {
+            consoleOutput.textContent = '';
+        }
+
+        // Test 1: DOM Elements
+        function testDOM() {
+            const elements = [
+                'game-canvas',
+                'mastermind-ui',
+                'guess-input',
+                'submit-guess',
+                'guess-history',
+                'timer',
+                'attempts-remaining',
+                'game-message'
+            ];
+
+            const results = document.getElementById('dom-results');
+            let html = '<ul style="margin-top: 10px;">';
+            let allPass = true;
+
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    html += `<li style="color: #00ff41;">✓ ${id} found</li>`;
+                } else {
+                    html += `<li style="color: #ff0080;">✗ ${id} NOT FOUND</li>`;
+                    allPass = false;
+                }
+            });
+
+            html += '</ul>';
+            results.innerHTML = html;
+
+            const testDiv = document.getElementById('test-dom');
+            testDiv.className = allPass ? 'test pass' : 'test fail';
+
+            console.log('DOM Test:', allPass ? 'PASSED' : 'FAILED');
+            return allPass;
+        }
+
+        // Test 2: Module Loading
+        async function testModules() {
+            const results = document.getElementById('module-results');
+            const testDiv = document.getElementById('test-modules');
+
+            try {
+                const module = await import('./js/puzzles/mastermind.js');
+
+                if (module.MastermindPuzzle) {
+                    results.innerHTML = '<p style="color: #00ff41;">✓ MastermindPuzzle module loaded successfully!</p>';
+                    testDiv.className = 'test pass';
+                    console.log('Module Test: PASSED');
+
+                    // Test creating an instance
+                    const puzzle = new module.MastermindPuzzle(1);
+                    results.innerHTML += `<p>✓ Puzzle instance created (solution: ${puzzle.revealSolution().join('')})</p>`;
+                    return true;
+                } else {
+                    throw new Error('MastermindPuzzle not found in module');
+                }
+            } catch (error) {
+                results.innerHTML = `<p style="color: #ff0080;">✗ Module loading failed: ${error.message}</p>`;
+                results.innerHTML += '<p style="color: #ff0080;">Make sure you\'re running via a web server!</p>';
+                testDiv.className = 'test fail';
+                console.error('Module Test: FAILED', error);
+                return false;
+            }
+        }
+
+        // Test 3: Game Initialization
+        async function testGame() {
+            const results = document.getElementById('game-results');
+            const testDiv = document.getElementById('test-game');
+
+            try {
+                const mainModule = await import('./js/main.js');
+
+                if (window.game) {
+                    results.innerHTML = '<p style="color: #00ff41;">✓ Game instance found!</p>';
+                    results.innerHTML += `<p>Game state: ${window.game.puzzle ? 'Puzzle loaded' : 'No puzzle'}</p>`;
+
+                    if (window.game.puzzle) {
+                        const solution = window.game.puzzle.revealSolution();
+                        results.innerHTML += `<p>Current puzzle solution: ${solution.join('')}</p>`;
+                    }
+
+                    testDiv.className = 'test pass';
+                    console.log('Game Test: PASSED');
+                    return true;
+                } else {
+                    throw new Error('window.game not initialized');
+                }
+            } catch (error) {
+                results.innerHTML = `<p style="color: #ff0080;">✗ Game test failed: ${error.message}</p>`;
+                testDiv.className = 'test fail';
+                console.error('Game Test: FAILED', error);
+                return false;
+            }
+        }
+
+        // Run tests on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('Starting diagnostic tests...');
+            console.log('User Agent:', navigator.userAgent);
+            console.log('Document readyState:', document.readyState);
+            console.log('Location:', window.location.href);
+
+            testDOM();
+            await testModules();
+        });
+    </script>
+</body>
+</html>
