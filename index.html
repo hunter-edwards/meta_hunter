@@ -14,6 +14,16 @@
             <div id="mastermind-ui" class="puzzle-ui">
                 <div class="puzzle-header">
                     <h1>MASTERMIND</h1>
+                    <div class="game-stats">
+                        <div class="stat">
+                            <span class="label">Bits:</span>
+                            <span id="data-display" class="data-value">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="label">Round:</span>
+                            <span id="round-display">1</span>
+                        </div>
+                    </div>
                     <div class="puzzle-stats">
                         <div class="stat">
                             <span class="label">Timer:</span>
@@ -43,6 +53,31 @@
                     </div>
 
                     <div id="game-message" class="message"></div>
+                </div>
+            </div>
+
+            <!-- Shop UI -->
+            <div id="shop-ui" class="shop-ui" style="display: none;">
+                <div class="shop-header">
+                    <h1>UPGRADE SHOP</h1>
+                    <div class="shop-info">
+                        <div class="stat">
+                            <span class="label">Available Bits:</span>
+                            <span id="shop-data-display" class="data-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="shop-content">
+                    <p class="shop-description">Choose your upgrades wisely. They'll help you crack tougher codes!</p>
+                    <div id="shop-upgrades" class="shop-upgrades">
+                        <!-- Upgrades will be added here dynamically -->
+                    </div>
+                </div>
+
+                <div class="shop-actions">
+                    <button id="shop-continue" class="btn-primary">CONTINUE</button>
+                    <button id="shop-skip" class="btn-secondary">SKIP SHOP</button>
                 </div>
             </div>
         </div>

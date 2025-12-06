@@ -5,6 +5,7 @@
  */
 
 import { MastermindPuzzle } from './puzzles/mastermind.js';
+import { getRandomUpgrades, applyUpgrades, modifyScore, getPuzzleStartEffects } from './systems/upgrades.js';
 
 class MetaHunterGame {
     constructor() {
@@ -12,6 +13,11 @@ class MetaHunterGame {
         this.ctx = this.canvas.getContext('2d');
         this.puzzle = null;
         this.timerInterval = null;
+
+        // Game state
+        this.data = 0; // Currency (bits)
+        this.upgrades = []; // Active upgrades
+        this.round = 0; // Current round number
 
         // UI Elements
         this.ui = {
@@ -21,7 +27,15 @@ class MetaHunterGame {
             guessHistory: document.getElementById('guess-history'),
             timer: document.getElementById('timer'),
             attemptsRemaining: document.getElementById('attempts-remaining'),
-            message: document.getElementById('game-message')
+            message: document.getElementById('game-message'),
+            dataDisplay: document.getElementById('data-display'),
+            roundDisplay: document.getElementById('round-display'),
+            // Shop elements
+            shopUI: document.getElementById('shop-ui'),
+            shopDataDisplay: document.getElementById('shop-data-display'),
+            shopUpgrades: document.getElementById('shop-upgrades'),
+            shopContinue: document.getElementById('shop-continue'),
+            shopSkip: document.getElementById('shop-skip')
         };
 
         this.init();
@@ -79,6 +93,19 @@ class MetaHunterGame {
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
 
+        // Shop button listeners
+        this.ui.shopContinue.addEventListener('click', () => {
+            this.hideShop();
+            this.round++;
+            this.startNewPuzzle();
+        });
+
+        this.ui.shopSkip.addEventListener('click', () => {
+            this.hideShop();
+            this.round++;
+            this.startNewPuzzle();
+        });
+
         console.log('Event listeners set up successfully!');
     }
 
@@ -86,13 +113,17 @@ class MetaHunterGame {
      * Start a new Mastermind puzzle
      */
     startNewPuzzle(difficulty = 0) {
-        // Clear any existing timer
+        // Clear any existing timer - do this FIRST and set to null
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
+            this.timerInterval = null;
         }
 
         // Create new puzzle (difficulty 0 = 3 digits, easier!)
         this.puzzle = new MastermindPuzzle(difficulty);
+
+        // Apply owned upgrades to the puzzle
+        applyUpgrades(this.puzzle, this.upgrades);
 
         // Reset UI
         this.ui.guessHistory.innerHTML = '';
@@ -104,14 +135,28 @@ class MetaHunterGame {
         this.ui.guessInput.placeholder = `Enter ${this.puzzle.codeLength}-digit code (0-9)`;
         this.ui.guessInput.maxLength = this.puzzle.codeLength;
 
-        // Update stats
-        this.updateUI();
+        // Update displays
+        this.ui.dataDisplay.textContent = this.data;
+        this.ui.roundDisplay.textContent = this.round;
 
-        // Start timer
+        // Force immediate UI update with new timer value
+        this.ui.timer.textContent = Math.ceil(this.puzzle.timer);
+        this.ui.attemptsRemaining.textContent = this.puzzle.maxGuesses;
+
+        // Show hints from upgrades
+        const hints = getPuzzleStartEffects(this.puzzle, this.upgrades);
+        if (hints.length > 0) {
+            const hintMessages = hints.map(h => h.hint).join(' | ');
+            this.showMessage(hintMessages, 'info');
+        }
+
+        // Start timer AFTER UI is reset
         this.startTimer();
 
         // Focus input
         this.ui.guessInput.focus();
+
+        console.log('New puzzle started. Solution:', this.puzzle.revealSolution().join(''));
     }
 
     /**
@@ -222,7 +267,10 @@ class MetaHunterGame {
      * Handle timeout
      */
     handleTimeout() {
-        clearInterval(this.timerInterval);
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
         this.puzzle.isComplete = true;
         this.ui.guessInput.disabled = true;
         this.ui.submitButton.disabled = true;
@@ -231,26 +279,42 @@ class MetaHunterGame {
             `Time's up! The code was: ${this.puzzle.solution.join('')}`,
             'error'
         );
+
+        // Auto-restart after timeout
+        setTimeout(() => {
+            if (confirm('Time\'s up! Try another puzzle?')) {
+                this.startNewPuzzle();
+            }
+        }, 1500);
     }
 
     /**
      * Handle puzzle win
      */
     handleWin(result) {
-        clearInterval(this.timerInterval);
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
         this.ui.guessInput.disabled = true;
         this.ui.submitButton.disabled = true;
 
+        // Apply upgrade modifiers to score
+        const modifiedScore = modifyScore(result.score, this.puzzle, this.upgrades);
+
         this.showMessage(
-            `${result.message} Score: ${result.score} data`,
+            `${result.message} Earned: ${modifiedScore} bits!`,
             'success'
         );
 
-        // Show restart option after a delay
+        // Award data/bits to player
+        this.data += modifiedScore;
+        this.ui.dataDisplay.textContent = this.data;
+        console.log(`Total bits: ${this.data}`);
+
+        // Show shop after a delay
         setTimeout(() => {
-            if (confirm('Code cracked! Start a new puzzle?')) {
-                this.startNewPuzzle();
-            }
+            this.showShop();
         }, 1500);
     }
 
@@ -258,7 +322,10 @@ class MetaHunterGame {
      * Handle puzzle loss
      */
     handleLoss(result) {
-        clearInterval(this.timerInterval);
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
         this.ui.guessInput.disabled = true;
         this.ui.submitButton.disabled = true;
 
@@ -278,6 +345,123 @@ class MetaHunterGame {
     showMessage(text, type = 'info') {
         this.ui.message.textContent = text;
         this.ui.message.className = `message ${type}`;
+    }
+
+    /**
+     * Show the shop with random upgrades
+     */
+    showShop() {
+        // Hide puzzle UI
+        this.ui.mastermindUI.style.display = 'none';
+
+        // Get random upgrades
+        const availableUpgrades = getRandomUpgrades(4, this.upgrades);
+
+        // Update shop data display
+        this.ui.shopDataDisplay.textContent = this.data;
+
+        // Clear previous upgrades
+        this.ui.shopUpgrades.innerHTML = '';
+
+        // Add upgrade cards
+        availableUpgrades.forEach(upgrade => {
+            const card = this.createUpgradeCard(upgrade);
+            this.ui.shopUpgrades.appendChild(card);
+        });
+
+        // Show shop
+        this.ui.shopUI.style.display = 'block';
+
+        console.log('Shop opened with', availableUpgrades.length, 'upgrades');
+    }
+
+    /**
+     * Hide the shop
+     */
+    hideShop() {
+        this.ui.shopUI.style.display = 'none';
+        this.ui.mastermindUI.style.display = 'block';
+    }
+
+    /**
+     * Create an upgrade card element
+     */
+    createUpgradeCard(upgrade) {
+        const card = document.createElement('div');
+        card.className = 'upgrade-card';
+
+        // Check if already owned
+        const isOwned = this.upgrades.includes(upgrade.id);
+        const canAfford = this.data >= upgrade.cost;
+
+        if (!canAfford) {
+            card.classList.add('disabled');
+        }
+        if (isOwned && !upgrade.stackable) {
+            card.classList.add('owned');
+        }
+
+        card.innerHTML = `
+            <div class="upgrade-header">
+                <span class="upgrade-name">${upgrade.name}</span>
+                <span class="upgrade-cost">${upgrade.cost} bits</span>
+            </div>
+            <div class="upgrade-description">${upgrade.description}</div>
+            <div class="upgrade-effect">→ ${upgrade.effect}</div>
+        `;
+
+        // Add click handler
+        if (canAfford) {
+            card.addEventListener('click', () => {
+                this.purchaseUpgrade(upgrade, card);
+            });
+        }
+
+        return card;
+    }
+
+    /**
+     * Purchase an upgrade
+     */
+    purchaseUpgrade(upgrade, cardElement) {
+        // Check if can afford
+        if (this.data < upgrade.cost) {
+            console.log('Cannot afford upgrade:', upgrade.name);
+            return;
+        }
+
+        // Deduct cost
+        this.data -= upgrade.cost;
+        this.ui.shopDataDisplay.textContent = this.data;
+        this.ui.dataDisplay.textContent = this.data;
+
+        // Add upgrade
+        this.upgrades.push(upgrade.id);
+
+        // Visual feedback
+        cardElement.classList.add('owned');
+        cardElement.style.opacity = '0.7';
+        cardElement.style.pointerEvents = 'none';
+
+        // Show confirmation
+        const costText = cardElement.querySelector('.upgrade-cost');
+        costText.textContent = 'PURCHASED';
+        costText.style.color = 'var(--color-fg)';
+
+        console.log('Purchased upgrade:', upgrade.name);
+        console.log('Remaining bits:', this.data);
+        console.log('Active upgrades:', this.upgrades);
+
+        // Update all cards to reflect new balance
+        setTimeout(() => {
+            const allCards = this.ui.shopUpgrades.querySelectorAll('.upgrade-card');
+            allCards.forEach(card => {
+                const cost = parseInt(card.querySelector('.upgrade-cost').textContent);
+                if (cost > this.data && !card.classList.contains('owned')) {
+                    card.classList.add('disabled');
+                }
+            });
+        }, 100);
     }
 
     /**

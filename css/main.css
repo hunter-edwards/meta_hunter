@@ -84,10 +84,26 @@ body {
     text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
 }
 
+.game-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(0, 255, 65, 0.05);
+    border-radius: 4px;
+}
+
 .puzzle-stats {
     display: flex;
     justify-content: space-around;
     gap: 20px;
+}
+
+.data-value {
+    color: var(--color-accent);
+    font-weight: bold;
+    font-size: 1.2em;
 }
 
 .stat {
@@ -296,4 +312,129 @@ button:disabled {
     input[type="text"] {
         letter-spacing: 4px;
     }
+}
+
+/* Shop UI */
+.shop-ui {
+    background: rgba(10, 14, 15, 0.98);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 0 30px rgba(255, 0, 128, 0.4);
+}
+
+.shop-header {
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--color-accent);
+    padding-bottom: 15px;
+}
+
+.shop-header h1 {
+    color: var(--color-accent);
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+}
+
+.shop-info {
+    text-align: center;
+    font-size: 1.2em;
+}
+
+.shop-description {
+    color: var(--color-text);
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 0.95em;
+    font-style: italic;
+}
+
+.shop-upgrades {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.upgrade-card {
+    background: rgba(0, 255, 65, 0.05);
+    border: 2px solid var(--color-border);
+    border-radius: 6px;
+    padding: 15px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.upgrade-card:hover:not(.disabled) {
+    background: rgba(0, 255, 65, 0.1);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+    transform: translateY(-2px);
+}
+
+.upgrade-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: var(--color-text);
+}
+
+.upgrade-card.owned {
+    background: rgba(255, 0, 128, 0.1);
+    border-color: var(--color-accent);
+}
+
+.upgrade-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.upgrade-name {
+    color: var(--color-fg);
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.upgrade-cost {
+    color: var(--color-accent);
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.upgrade-description {
+    color: var(--color-text);
+    font-size: 0.9em;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.upgrade-effect {
+    color: var(--color-fg);
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.shop-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--color-text);
+    border: 2px solid var(--color-text);
+}
+
+.btn-secondary:hover {
+    background: var(--color-text);
+    color: var(--color-bg);
 }
